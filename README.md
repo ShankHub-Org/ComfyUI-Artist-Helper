@@ -37,6 +37,11 @@ This helper was originally designed for Anima, where artist tags are commonly wr
 ```text
 @artist_name
 ```
+### Example
+
+<p align="center">
+  <img src="examples/Artist%20Helper.jpg" width="700"/>
+</p>
 
 For many other checkpoints, you may get better results by converting tags into more natural language styles such as:
 
