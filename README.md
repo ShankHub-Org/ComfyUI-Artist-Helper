@@ -48,3 +48,9 @@ artist name \(style\)
 ```
 
 Different checkpoints interpret artist/style prompts differently, so results may vary depending on model training.
+
+## Example Workflow
+
+Drag the image below into ComfyUI to load the workflow:
+
+![Example Workflow](examples/example_workflow.png)
