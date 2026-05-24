@@ -86,7 +86,6 @@ def load_preferences() -> dict[str, list[str]]:
     favorites = [t for t in dedupe_preserve_order(favorites) if t]
     blacklist = [t for t in dedupe_preserve_order(blacklist) if t]
 
-    # blacklist wins
     favorites = [t for t in favorites if t not in blacklist]
 
     return {
@@ -106,7 +105,6 @@ def save_preferences(prefs: dict[str, list[str]]) -> None:
         "blacklist": dedupe_preserve_order(blacklist),
     }
 
-    # blacklist wins
     cleaned["favorites"] = [t for t in cleaned["favorites"] if t not in cleaned["blacklist"]]
 
     with PREF_FILE.open("w", encoding="utf-8") as f:
@@ -147,16 +145,13 @@ def pick_random_favorite(
 
 
 def sanitize_filename_part(text: str) -> str:
-    """
-    Make a safe filename component like: Toriyama_Akira
-    """
     text = normalize_tag(text)
     if text.startswith("@"):
         text = text[1:]
     text = text.replace("/", "_").replace("\\", "_")
     text = re.sub(r"[^a-zA-Z0-9_.-]+", "_", text)
     text = re.sub(r"_+", "_", text).strip("._-")
-    return text or "ComfyUI"
+    return text or "comfyui"
 
 
 def filename_from_prompt(prompt: str, max_words: int = 5) -> str:
@@ -164,7 +159,7 @@ def filename_from_prompt(prompt: str, max_words: int = 5) -> str:
     Fallback filename when no artist is chosen.
     Example:
       "absurdres, masterpiece, best quality, very aesthetic, 1girl"
-      -> "absurdres_masterpiece_best_quality_very_aesthetic_ComfyUI"
+      -> "absurdres_masterpiece_best_quality_very_aesthetic_comfyui"
     """
     text = prompt or ""
     text = re.sub(r"@[A-Za-z0-9_.\-]+", " ", text)
@@ -172,8 +167,8 @@ def filename_from_prompt(prompt: str, max_words: int = 5) -> str:
     text = re.sub(r"[^A-Za-z0-9]+", " ", text).strip()
     words = text.split()
     if not words:
-        return "ComfyUI"
-    return "_".join(words[:max_words]) + "_ComfyUI"
+        return "comfyui"
+    return "_".join(words[:max_words]).lower() + "_comfyui"
 
 
 def extract_explicit_artist_from_prompt(prompt: str) -> str:
@@ -344,16 +339,16 @@ class AnimaArtistWildcard:
         def random_favorite() -> str:
             return pick_random_favorite(all_tags, prefs, respect_blacklist=True)
 
-        picked_from_prompt: list[str] = []
+        picked_events: list[tuple[str, str]] = []
 
         def replace_random(_match):
             picked = random_allowed()
-            picked_from_prompt.append(picked)
+            picked_events.append(("random", picked))
             return picked
 
         def replace_fav(_match):
             picked = random_favorite()
-            picked_from_prompt.append(picked)
+            picked_events.append(("fav", picked))
             return picked
 
         out = re.sub(r"@random\b", replace_random, prompt, flags=re.IGNORECASE)
@@ -361,21 +356,24 @@ class AnimaArtistWildcard:
 
         explicit_artist = extract_explicit_artist_from_prompt(prompt)
 
-        chosen = ""
+        chosen_artist = ""
+        source_kind = ""
+
         if explicit_artist:
-            chosen = explicit_artist
-        elif picked_from_prompt:
-            chosen = picked_from_prompt[-1]
+            chosen_artist = explicit_artist
+            source_kind = "artist"
+        elif picked_events:
+            source_kind, chosen_artist = picked_events[0]
 
         if "__ANIMA_ARTIST__" in out:
-            out = out.replace("__ANIMA_ARTIST__", chosen or "")
+            out = out.replace("__ANIMA_ARTIST__", chosen_artist or "")
 
-        selected_artist = chosen or ""
+        selected_artist = chosen_artist or ""
 
         if selected_artist:
-            filename_prefix = f"{sanitize_filename_part(selected_artist)}_ComfyUI"
+            filename_prefix = f"{sanitize_filename_part(selected_artist)}_comfyui"
         else:
-            filename_prefix = filename_from_prompt(prompt)
+            filename_prefix = "comfyui"
 
         return (out, selected_artist, filename_prefix)
 
