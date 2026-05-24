@@ -373,7 +373,7 @@ class AnimaArtistWildcard:
         if selected_artist:
             filename_prefix = f"{sanitize_filename_part(selected_artist)}_comfyui"
         else:
-            filename_prefix = "comfyui"
+            filename_prefix = "ComfyUI"
 
         return (out, selected_artist, filename_prefix)
 
