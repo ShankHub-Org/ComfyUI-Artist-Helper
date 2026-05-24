@@ -86,6 +86,7 @@ def load_preferences() -> dict[str, list[str]]:
     favorites = [t for t in dedupe_preserve_order(favorites) if t]
     blacklist = [t for t in dedupe_preserve_order(blacklist) if t]
 
+    # blacklist wins
     favorites = [t for t in favorites if t not in blacklist]
 
     return {
@@ -105,6 +106,7 @@ def save_preferences(prefs: dict[str, list[str]]) -> None:
         "blacklist": dedupe_preserve_order(blacklist),
     }
 
+    # blacklist wins
     cleaned["favorites"] = [t for t in cleaned["favorites"] if t not in cleaned["blacklist"]]
 
     with PREF_FILE.open("w", encoding="utf-8") as f:
@@ -145,6 +147,9 @@ def pick_random_favorite(
 
 
 def sanitize_filename_part(text: str) -> str:
+    """
+    Make a safe filename component like: Toriyama_Akira
+    """
     text = normalize_tag(text)
     if text.startswith("@"):
         text = text[1:]
@@ -152,6 +157,23 @@ def sanitize_filename_part(text: str) -> str:
     text = re.sub(r"[^a-zA-Z0-9_.-]+", "_", text)
     text = re.sub(r"_+", "_", text).strip("._-")
     return text or "ComfyUI"
+
+
+def filename_from_prompt(prompt: str, max_words: int = 5) -> str:
+    """
+    Fallback filename when no artist is chosen.
+    Example:
+      "absurdres, masterpiece, best quality, very aesthetic, 1girl"
+      -> "absurdres_masterpiece_best_quality_very_aesthetic_ComfyUI"
+    """
+    text = prompt or ""
+    text = re.sub(r"@[A-Za-z0-9_.\-]+", " ", text)
+    text = text.replace("__ANIMA_ARTIST__", " ")
+    text = re.sub(r"[^A-Za-z0-9]+", " ", text).strip()
+    words = text.split()
+    if not words:
+        return "ComfyUI"
+    return "_".join(words[:max_words]) + "_ComfyUI"
 
 
 def extract_explicit_artist_from_prompt(prompt: str) -> str:
@@ -349,7 +371,11 @@ class AnimaArtistWildcard:
             out = out.replace("__ANIMA_ARTIST__", chosen or "")
 
         selected_artist = chosen or ""
-        filename_prefix = f"{sanitize_filename_part(selected_artist)}_ComfyUI" if selected_artist else "ComfyUI"
+
+        if selected_artist:
+            filename_prefix = f"{sanitize_filename_part(selected_artist)}_ComfyUI"
+        else:
+            filename_prefix = filename_from_prompt(prompt)
 
         return (out, selected_artist, filename_prefix)
 
