@@ -59,3 +59,12 @@ Different checkpoints interpret artist/style prompts differently, so results may
 Drag the image below into ComfyUI to load the workflow:
 
 ![Example Workflow](examples/example_workflow.png)
+
+## Credits
+
+Artist tag data sourced from:
+- https://thetacursed.github.io/Anima-Style-Explorer/index.html
+- https://tagexplorer.github.io/#/artists
+
+Autocomplete UX inspiration:
+- https://github.com/newtextdoc1111/ComfyUI-Autocomplete-Plus
